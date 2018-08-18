@@ -1,9 +1,12 @@
 package strategies;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Stack;
 
 import automail.MailItem;
 import automail.PriorityMailItem;
@@ -11,25 +14,27 @@ import automail.Robot;
 import automail.StorageTube;
 import exceptions.TubeFullException;
 
-public class MyMailPool4 implements IMailPool {
+public class MyMailPool6 implements IMailPool {
 	// put mails into 4 different MailPool by mail's priority and mail's weight
 	// nonPriorityHeavyPool store mails without priority and weight over 2000
 	// nonPriorityLightPool store mails without priority and weight below 2000
 	// priorityHeavyPool store mails with priority and weight over 2000
 	// priorityLightPool store mails with priority and weight below 2000
-	private Queue<MailItem> nonPriorityHeavyPool;
-	private Queue<MailItem> nonPriorityLightPool;
+	private List<MailItem> nonPriorityHeavyPool;
+	private List<MailItem> nonPriorityLightPool;
 	private List<MailItem> priorityHeavyPool;
 	private List<MailItem> priorityLightPool;
 	private static final int MAX_TAKE = 4;
-	private Robot robot1, robot2, robot3;
+	// robots store a list of robot
+	private List<Robot> robots;
 
-	public MyMailPool4() {
+	public MyMailPool6() {
 		// Start empty
-		nonPriorityHeavyPool = new LinkedList<MailItem>();
-		nonPriorityLightPool = new LinkedList<MailItem>();
+		nonPriorityHeavyPool = new ArrayList<MailItem>();
+		nonPriorityLightPool = new ArrayList<MailItem>();
 		priorityHeavyPool = new ArrayList<MailItem>();
 		priorityLightPool = new ArrayList<MailItem>();
+		robots = new ArrayList<Robot>();
 	}
 
 	@Override
@@ -43,14 +48,16 @@ public class MyMailPool4 implements IMailPool {
 			}
 		} else {
 			if (mailItem.getWeight() > 2000) {
-				nonPriorityHeavyPool.offer(mailItem);
+				nonPriorityHeavyPool.add(mailItem);
 			} else {
-				nonPriorityLightPool.offer(mailItem);
+				nonPriorityLightPool.add(mailItem);
 			}
 		}
 	}
+
 	/**
 	 * get the size of nonPriorityHeavyPool
+	 * 
 	 * @return the size of nonPriorityHeavyPool
 	 */
 	private int getNonPriorityHeavyPoolSize() {
@@ -59,6 +66,7 @@ public class MyMailPool4 implements IMailPool {
 
 	/**
 	 * get the size of nonPriorityLightPool
+	 * 
 	 * @return the size of nonPriorityLightPool
 	 */
 	private int getNonPriorityLightPoolSize() {
@@ -67,6 +75,7 @@ public class MyMailPool4 implements IMailPool {
 
 	/**
 	 * get the size of priorityHeavyPool
+	 * 
 	 * @return the size of priorityHeavyPool
 	 */
 	private int getPriorityHeavyPoolSize() {
@@ -75,6 +84,7 @@ public class MyMailPool4 implements IMailPool {
 
 	/**
 	 * get the size of priorityLightPool
+	 * 
 	 * @return the size of priorityLightPool
 	 */
 	private int getPriorityLightPoolSize() {
@@ -82,31 +92,43 @@ public class MyMailPool4 implements IMailPool {
 	}
 
 	/**
-	 * if nonPriorityHeavyPool is not null, get a MailItem from the queue
+	 * if nonPriorityHeavyPool is not null, get a MailItem from the list after
+	 * sorting the list by DestFloor
+	 * 
 	 * @return a MailItem or null
 	 */
 	private MailItem getNonPriorityHeavyMail() {
 		if (getNonPriorityHeavyPoolSize() > 0) {
-			return nonPriorityHeavyPool.poll();
+			Collections.sort(nonPriorityHeavyPool, new SortByDestFloor());
+			MailItem mailItem = nonPriorityHeavyPool.get(0);
+			nonPriorityHeavyPool.remove(0);
+			return mailItem;
 		} else {
 			return null;
 		}
 	}
 
 	/**
-	 * if nonPriorityLightPool is not null, get a MailItem from the queue
+	 * if nonPriorityLightPool is not null, get a MailItem from the list after
+	 * sorting the list by DestFloor
+	 * 
 	 * @return a MailItem or null
 	 */
 	private MailItem getNonPriorityLightMail() {
 		if (getNonPriorityLightPoolSize() > 0) {
-			return nonPriorityLightPool.poll();
+			Collections.sort(nonPriorityLightPool, new SortByDestFloor());
+			MailItem mailItem = nonPriorityLightPool.get(0);
+			nonPriorityLightPool.remove(0);
+			return mailItem;
 		} else {
 			return null;
 		}
 	}
 
 	/**
-	 * if priorityLightPool is not null, get the highest PRIORITY_LEVEL mailItem from the priorityHeavyPool
+	 * if priorityLightPool is not null, get the highest PRIORITY_LEVEL mailItem
+	 * from the priorityHeavyPool
+	 * 
 	 * @return a MailItem or null
 	 */
 	private MailItem getHighestPriorityHeavyMail() {
@@ -121,7 +143,7 @@ public class MyMailPool4 implements IMailPool {
 					maxLevelIndex = i;
 				}
 			}
-			//remove the highest mailItem from the list before return 
+			// remove the highest mailItem from the list before return
 			MailItem highestPriorityMail = priorityHeavyPool.get(maxLevelIndex);
 			priorityHeavyPool.remove(maxLevelIndex);
 			return highestPriorityMail;
@@ -131,7 +153,9 @@ public class MyMailPool4 implements IMailPool {
 	}
 
 	/**
-	 * if priorityLightPool is not null, get the highest PRIORITY_LEVEL mailItem from the priorityLightPool
+	 * if priorityLightPool is not null, get the highest PRIORITY_LEVEL mailItem
+	 * from the priorityLightPool
+	 * 
 	 * @return a MailItem or null
 	 */
 	private MailItem getHighestPriorityLightMail() {
@@ -146,7 +170,7 @@ public class MyMailPool4 implements IMailPool {
 					maxLevelIndex = i;
 				}
 			}
-			//remove the highest mailItem from the list before return 
+			// remove the highest mailItem from the list before return
 			MailItem highestPriorityMail = priorityLightPool.get(maxLevelIndex);
 			priorityLightPool.remove(maxLevelIndex);
 			return highestPriorityMail;
@@ -157,15 +181,13 @@ public class MyMailPool4 implements IMailPool {
 
 	@Override
 	public void step() {
-		if (robot1 != null)
-			fillStorageTube(robot1);
-		if (robot2 != null)
-			fillStorageTube(robot2);
-		if (robot3 != null)
-			fillStorageTube(robot3);
+		for (int i = 0; i < robots.size(); i++) {
+			fillStorageTube(robots.get(i));
+		}
 	}
 
 	/**
+	 * fill robot's tube
 	 * 
 	 * @param robot the robot to be loaded mailItem and dispatched
 	 */
@@ -173,8 +195,9 @@ public class MyMailPool4 implements IMailPool {
 		StorageTube tube = robot.getTube();
 		boolean isStrong = robot.isStrong();
 		try {
-			// if the robot is strong, put mailItems into tube from mailPool by sequence of priorityHeavyPool,nonPriorityHeavyPool,priorityHeavyLightPool,nonPriorityLightPool
-			// until the tube is full
+			// if the robot is strong, put mailItems into tube from mailPool by sequence of
+			// priorityHeavyPool,nonPriorityHeavyPool,priorityHeavyLightPool,nonPriorityLightPool
+			// until the tube is full or no mailItem in mailPool
 			if (isStrong) {
 				while (getPriorityHeavyPoolSize() > 0 && tube.getSize() < MAX_TAKE) {
 					tube.addItem(getHighestPriorityHeavyMail());
@@ -189,11 +212,13 @@ public class MyMailPool4 implements IMailPool {
 					tube.addItem(getNonPriorityLightMail());
 				}
 				if (tube.getSize() > 0) {
+					tube = sortTube(tube);
 					robot.dispatch();
 				}
-			} 
-			// if the robot is weak, put mailItems into tube from mailPool by sequence of priorityHeavyLightPool,nonPriorityLightPool
-			// until the tube is full
+			}
+			// if the robot is weak, put mailItems into tube from mailPool by sequence of
+			// priorityHeavyLightPool,nonPriorityLightPool
+			// until the tube is full or no mailItem in mailPool
 			else {
 				while (getPriorityLightPoolSize() > 0 && tube.getSize() < MAX_TAKE) {
 					tube.addItem(getHighestPriorityLightMail());
@@ -202,40 +227,65 @@ public class MyMailPool4 implements IMailPool {
 					tube.addItem(getNonPriorityLightMail());
 				}
 				if (tube.getSize() > 0) {
+					tube = sortTube(tube);
 					robot.dispatch();
 				}
 			}
 		} catch (TubeFullException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 	}
 
-	@Override
-	public void registerWaiting(Robot robot) {
-		// Also repetitive - what if there was more than 10 robots?!!
-		if (robot1 == null) {
-			robot1 = robot;
-		} else if (robot2 == null) {
-			robot2 = robot;
-		} else if (robot3 == null) {
-			robot3 = robot;
+	/**
+	 * sort mailItems in tube
+	 * 
+	 * @param backpack unsorted tube
+	 * @return sorted tube by DestFloor
+	 */
+	public StorageTube sortTube(StorageTube backpack) {
+		if (!backpack.tube.isEmpty()) {
+			Stack<MailItem> orderTude = new Stack<MailItem>();
+			while (!backpack.tube.isEmpty()) {
+				MailItem temp = backpack.tube.pop();
+				while (!orderTude.isEmpty() && orderTude.peek().getDestFloor() > temp.getDestFloor()) {
+					backpack.tube.push(orderTude.pop());
+				}
+				orderTude.push(temp);
+			}
+			while (!orderTude.isEmpty()) {
+				backpack.tube.push(orderTude.pop());
+			}
+			return backpack;
 		} else {
-			/* This can't happen, can it? What do I do here?!? */
+			return backpack;
 		}
 	}
 
 	@Override
+	public void registerWaiting(Robot robot) {
+		robots.add(robot);
+	}
+
+	@Override
 	public void deregisterWaiting(Robot robot) {
-		if (robot1 == robot) {
-			robot1 = null;
-		} else if (robot2 == robot) {
-			robot2 = null;
-		} else if (robot3 == robot) {
-			robot3 = null;
-		} else {
-			/* This can't happen, can it? What do I do here?!? */
+		for (int i = 0; i < robots.size(); i++) {
+			if (robots.get(i) == robot) {
+				robots.remove(i);
+			}
+		}
+	}
+
+	/**
+	 * sort list by DestFloor
+	 */
+	class SortByDestFloor implements Comparator {
+		public int compare(Object o1, Object o2) {
+			MailItem m1 = (MailItem) o1;
+			MailItem m2 = (MailItem) o2;
+			if (m1.getDestFloor() > m2.getDestFloor())
+				return 1;
+			return -1;
 		}
 	}
 

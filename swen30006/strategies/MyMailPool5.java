@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.Stack;
 
 import automail.MailItem;
 import automail.PriorityMailItem;
@@ -11,7 +12,7 @@ import automail.Robot;
 import automail.StorageTube;
 import exceptions.TubeFullException;
 
-public class MyMailPool4 implements IMailPool {
+public class MyMailPool5 implements IMailPool {
 	// put mails into 4 different MailPool by mail's priority and mail's weight
 	// nonPriorityHeavyPool store mails without priority and weight over 2000
 	// nonPriorityLightPool store mails without priority and weight below 2000
@@ -24,7 +25,7 @@ public class MyMailPool4 implements IMailPool {
 	private static final int MAX_TAKE = 4;
 	private Robot robot1, robot2, robot3;
 
-	public MyMailPool4() {
+	public MyMailPool5() {
 		// Start empty
 		nonPriorityHeavyPool = new LinkedList<MailItem>();
 		nonPriorityLightPool = new LinkedList<MailItem>();
@@ -189,6 +190,7 @@ public class MyMailPool4 implements IMailPool {
 					tube.addItem(getNonPriorityLightMail());
 				}
 				if (tube.getSize() > 0) {
+					tube = sortTube(tube);
 					robot.dispatch();
 				}
 			} 
@@ -202,6 +204,7 @@ public class MyMailPool4 implements IMailPool {
 					tube.addItem(getNonPriorityLightMail());
 				}
 				if (tube.getSize() > 0) {
+					tube = sortTube(tube);
 					robot.dispatch();
 				}
 			}
@@ -212,6 +215,32 @@ public class MyMailPool4 implements IMailPool {
 
 	}
 
+
+	/** 
+	 * sort mailItems in tube
+	 * @param backpack unsorted tube
+	 * @param a sorted tube by DestFloor
+	 * */
+	public StorageTube sortTube(StorageTube backpack) {
+		if(!backpack.tube.isEmpty()) {
+			Stack<MailItem> orderTude = new Stack<MailItem>();
+		    while(!backpack.tube.isEmpty()){
+		        MailItem cur=backpack.tube.pop();
+		        while(!orderTude.isEmpty()&&orderTude.peek().getDestFloor()<cur.getDestFloor()){
+		            backpack.tube.push(orderTude.pop());
+		        }
+		        orderTude.push(cur);
+		    }
+		    while(!orderTude.isEmpty()){
+		        backpack.tube.push(orderTude.pop());
+		    }
+			return backpack;
+		}
+		else {
+			return backpack;
+		}
+	}
+	
 	@Override
 	public void registerWaiting(Robot robot) {
 		// Also repetitive - what if there was more than 10 robots?!!
